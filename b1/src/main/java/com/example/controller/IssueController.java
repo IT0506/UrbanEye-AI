@@ -12,7 +12,6 @@ import com.example.service.StorageService;
 
 @RestController
 @RequestMapping("/api/issues")
-@CrossOrigin(origins = "http://localhost:5173")
 public class IssueController {
 
     @Autowired
