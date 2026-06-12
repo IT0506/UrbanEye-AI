@@ -3,7 +3,7 @@ spring:
     name: urbaneye-backend
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 firebase:
   bucket-name: urbaneye-ai.appspot.com
@@ -13,4 +13,4 @@ gcp:
   location: us-central1
 
 gemini:
- api-key: AQ.Ab8RN6IFv_XS0rqClMmA3s3OXwE_fvASbfwRJZGBI-e1LsZNkQ
+  api-key: ${GEMINI_API_KEY}
