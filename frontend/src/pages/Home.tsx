@@ -10,6 +10,10 @@ interface AnalysisResponse {
   complaint: string;
 }
 
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:8080";
+
 function Home() {
   const [file, setFile] = useState<File | null>(null);
 
@@ -19,28 +23,35 @@ function Home() {
   const [result, setResult] =
     useState<AnalysisResponse | null>(null);
 
+  const [loading, setLoading] = useState(false);
+
   const handleAnalyze = async () => {
     if (!file) {
-      alert("Please select an image first");
+      alert("Please select an image first.");
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLatitude(position.coords.latitude);
-        setLongitude(position.coords.longitude);
-      },
-      (error) => {
-        console.error(error);
-      }
-    );
+    setLoading(true);
+
+    // Get user's location (optional)
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLatitude(position.coords.latitude);
+          setLongitude(position.coords.longitude);
+        },
+        (error) => {
+          console.log("Location unavailable:", error.message);
+        }
+      );
+    }
 
     const formData = new FormData();
     formData.append("file", file);
 
     try {
       const response = await fetch(
-        "http://localhost:8080/api/issues/upload-analyze",
+        `${API_URL}/api/issues/upload-analyze`,
         {
           method: "POST",
           body: formData,
@@ -48,7 +59,9 @@ function Home() {
       );
 
       if (!response.ok) {
-        throw new Error("Server Error");
+        const text = await response.text();
+        console.error(text);
+        throw new Error("Backend request failed");
       }
 
       const data: AnalysisResponse =
@@ -57,7 +70,9 @@ function Home() {
       setResult(data);
     } catch (error) {
       console.error(error);
-      alert("Analysis failed");
+      alert("Unable to analyze image.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -79,32 +94,41 @@ function Home() {
           onAnalyze={handleAnalyze}
         />
 
-        {latitude !== null &&
-          longitude !== null && (
-            <div style={{ marginTop: "20px" }}>
-              <h3>Current Location</h3>
+        {loading && (
+          <p style={{ marginTop: 20 }}>
+            Analyzing image...
+          </p>
+        )}
 
-              <Map
-                lat={latitude}
-                lng={longitude}
-              />
+        {latitude !== null && longitude !== null && (
+          <div style={{ marginTop: "30px" }}>
+            <h2>Current Location</h2>
 
-              <p>
-                Latitude: {latitude}
-              </p>
+            <Map
+              lat={latitude}
+              lng={longitude}
+            />
 
-              <p>
-                Longitude: {longitude}
-              </p>
-            </div>
-          )}
+            <p>
+              <strong>Latitude:</strong>{" "}
+              {latitude.toFixed(6)}
+            </p>
+
+            <p>
+              <strong>Longitude:</strong>{" "}
+              {longitude.toFixed(6)}
+            </p>
+          </div>
+        )}
 
         {result && (
-          <ResultCard
-            issueType={result.issueType}
-            severity={result.severity}
-            complaint={result.complaint}
-          />
+          <div style={{ marginTop: "30px" }}>
+            <ResultCard
+              issueType={result.issueType}
+              severity={result.severity}
+              complaint={result.complaint}
+            />
+          </div>
         )}
       </div>
     </>
